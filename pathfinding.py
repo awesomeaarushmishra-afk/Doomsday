@@ -1,7 +1,6 @@
 from collections import deque
 from functools import lru_cache
 
-
 class PathFinding:
     def __init__(self, game):
         self.game = game
@@ -19,7 +18,7 @@ class PathFinding:
         while step and step != start:
             path.append(step)
             step = self.visited[step]
-        return path[-1]
+        return path[-1] if path else start
 
     def bfs(self, start, goal, graph):
         queue = deque([start])
@@ -29,12 +28,14 @@ class PathFinding:
             cur_node = queue.popleft()
             if cur_node == goal:
                 break
-            next_nodes = graph[cur_node]
+            next_nodes = graph.get(cur_node, [])
 
             for next_node in next_nodes:
-                if next_node not in visited and next_node not in self.game.object_handler.npc_positions:
-                    queue.append(next_node)
-                    visited[next_node] = cur_node
+                if next_node not in visited:
+                    # If the target is an enemy, we allow it; otherwise skip occupied tiles
+                    if (next_node not in self.game.object_handler.npc_positions) or (next_node == goal):
+                        queue.append(next_node)
+                        visited[next_node] = cur_node
         return visited
 
     def get_next_nodes(self, x, y):
