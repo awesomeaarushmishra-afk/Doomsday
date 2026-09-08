@@ -1,32 +1,31 @@
 import pygame as pg
 from settings import *
 from doom_font import DoomFont
+from floorcasting import FloorCaster
+from utils import resource_path
+
+CEILING_COLOR = (128, 128, 128)
 
 class ObjectRenderer:
     def __init__(self, game):
         self.game = game
         self.screen = game.render_surface
         self.wall_textures = self.load_wall_textures()
-        self.sky_image = self.get_texture('resources/textures/sky.png', (RENDER_WIDTH, HALF_HEIGHT))
-        self.sky_offset = 0
         self.blood_screen = self.get_texture('resources/textures/blood_screen.png', (RENDER_WIDTH, RENDER_HEIGHT))
+        self.floor_caster = FloorCaster(game)
 
-        # Health digit textures
         self.digit_size = int(90 * (RENDER_WIDTH / 800))
         self.digit_images = [self.get_texture(f'resources/textures/digits/{i}.png', [self.digit_size] * 2)
                              for i in range(11)]
         self.digits = dict(zip(map(str, range(11)), self.digit_images))
 
-        # Doom font for music & game over (used by main)
         self.doom_font = DoomFont(char_size=24)
 
-        # Heartbar texture
         try:
-            self.heartbar_texture = pg.image.load('resources/textures/heartbar.png').convert_alpha()
+            self.heartbar_texture = pg.image.load(resource_path('resources/textures/heartbar.png')).convert_alpha()
             self.heart_size = 30
             self.heartbar_texture = pg.transform.scale(self.heartbar_texture, (self.heart_size, self.heart_size))
-        except Exception as e:
-            print(f"Heartbar texture not found: {e}")
+        except:
             self.heartbar_texture = None
 
         self.game_over_image = self.get_texture('resources/textures/game_over.png', (RENDER_WIDTH, RENDER_HEIGHT))
@@ -38,72 +37,81 @@ class ObjectRenderer:
 
     def draw_player_health(self):
         health = str(self.game.player.health)
-        x = 20
-        y = 20
-        for i, char in enumerate(health):
-            if char in self.digits:
-                self.screen.blit(self.digits[char], (x + i * self.digit_size, y))
-        self.screen.blit(self.digits['10'], (x + len(health) * self.digit_size, y))
+        x, y = 20, 20
+        for i, ch in enumerate(health):
+            self.screen.blit(self.digits[ch], (x + i*self.digit_size, y))
+        self.screen.blit(self.digits['10'], (x + len(health)*self.digit_size, y))
 
     def draw_lives(self):
         lives = self.game.player.lives
-        if lives < 0:
-            lives = 0
-        x = 20
-        y = 20 + self.digit_size + 12
-
+        x, y = 20, 20 + self.digit_size + 12
         if self.heartbar_texture:
             for i in range(lives):
-                self.screen.blit(self.heartbar_texture, (x + i * (self.heart_size + 5), y))
+                self.screen.blit(self.heartbar_texture, (x + i*(self.heart_size+5), y))
         else:
-            # Fallback heart shape
-            fallback = pg.Surface((30, 30), pg.SRCALPHA)
-            pg.draw.circle(fallback, (255, 0, 0), (10, 10), 10)
-            pg.draw.circle(fallback, (255, 0, 0), (20, 10), 10)
-            pg.draw.polygon(fallback, (255, 0, 0), [(0, 12), (30, 12), (15, 30)])
+            fallback = pg.Surface((30,30), pg.SRCALPHA)
+            pg.draw.circle(fallback, (255,0,0), (10,10), 10)
+            pg.draw.circle(fallback, (255,0,0), (20,10), 10)
+            pg.draw.polygon(fallback, (255,0,0), [(0,12), (30,12), (15,30)])
             for i in range(lives):
-                self.screen.blit(fallback, (x + i * 35, y))
+                self.screen.blit(fallback, (x + i*35, y))
 
     def draw_music_hud(self):
-        if not hasattr(self.game, 'music_player') or self.game.music_player is None:
-            return
         mp = self.game.music_player
-        if not (mp.library and mp.current_idx is not None):
+        if not mp or not mp.library or mp.current_idx is None:
             return
-
         track = mp.current_track_title()
         allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -"
-        clean = ''.join(c for c in track if c in allowed)
-        clean = clean[:40]
-        surf = self.doom_font.render(clean, color=(255, 255, 255))
-        x = 20
-        y = 20 + self.digit_size + 12 + 45
+        clean = ''.join(c for c in track if c in allowed)[:40]
+        surf = self.doom_font.render(clean, color=(255,255,255))
+        x, y = 20, 20 + self.digit_size + 12 + 45
         self.screen.blit(surf, (x, y))
 
-    def win(self):
-        self.screen.blit(self.win_image, (0, 0))
+    def draw_level(self, level):
+        label = self.doom_font.render("level", color=(200,200,200), scale=0.8)
+        x = 20
+        y = 20 + self.digit_size + 12 + 45 + 30
+        self.screen.blit(label, (x, y))
+        level_str = str(level)
+        digit_x = x + label.get_width() + 10
+        for ch in level_str:
+            if ch in self.digits:
+                self.screen.blit(self.digits[ch], (digit_x, y - 4))
+                digit_x += self.digit_size
+
+    def draw_win_only(self):
+        self.screen.blit(self.win_image, (0,0))
+
+    def draw_blood_overlay(self):
+        self.screen.blit(self.blood_screen, (0,0))
 
     def game_over(self):
-        self.screen.blit(self.game_over_image, (0, 0))
+        self.screen.blit(self.game_over_image, (0,0))
 
     def player_damage(self):
-        self.screen.blit(self.blood_screen, (0, 0))
+        self.screen.blit(self.blood_screen, (0,0))
 
     def draw_background(self):
-        self.sky_offset = (self.sky_offset + 4.5 * self.game.player.rel) % RENDER_WIDTH
-        self.screen.blit(self.sky_image, (-self.sky_offset, 0))
-        self.screen.blit(self.sky_image, (-self.sky_offset + RENDER_WIDTH, 0))
-        pg.draw.rect(self.screen, FLOOR_COLOR, (0, HALF_HEIGHT, RENDER_WIDTH, RENDER_HEIGHT))
+        pg.draw.rect(self.screen, CEILING_COLOR, (0, 0, RENDER_WIDTH, HALF_HEIGHT))
+        pg.draw.rect(self.screen, FLOOR_COLOR, (0, HALF_HEIGHT, RENDER_WIDTH, RENDER_HEIGHT - HALF_HEIGHT))
+        try:
+            self.floor_caster.draw(self.screen)
+        except:
+            pass
 
     def render_game_objects(self):
-        list_objects = sorted(self.game.raycasting.objects_to_render, key=lambda t: t[0], reverse=True)
-        for depth, image, pos in list_objects:
-            self.screen.blit(image, pos)
+        for depth, img, pos in sorted(self.game.raycasting.objects_to_render, key=lambda x: x[0], reverse=True):
+            self.screen.blit(img, pos)
 
     @staticmethod
     def get_texture(path, res=(TEXTURE_SIZE, TEXTURE_SIZE)):
-        texture = pg.image.load(path).convert_alpha()
-        return pg.transform.scale(texture, res)
+        full_path = resource_path(path)
+        try:
+            tex = pg.image.load(full_path).convert_alpha()
+        except:
+            tex = pg.Surface(res, pg.SRCALPHA)
+            tex.fill((100,100,100))
+        return pg.transform.scale(tex, res)
 
     def load_wall_textures(self):
         return {
@@ -112,4 +120,6 @@ class ObjectRenderer:
             3: self.get_texture('resources/textures/3.png'),
             4: self.get_texture('resources/textures/4.png'),
             5: self.get_texture('resources/textures/5.png'),
+            6: self.get_texture('resources/textures/doom_door.png'),
+            9: self.get_texture('resources/textures/doom_elevator_wall.png'),
         }

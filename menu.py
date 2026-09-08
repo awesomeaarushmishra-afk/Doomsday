@@ -1,6 +1,7 @@
 import pygame as pg
 from settings import RENDER_WIDTH, RENDER_HEIGHT
 from doom_font import DoomFont
+from utils import resource_path
 
 class Menu:
     def __init__(self, game):
@@ -21,13 +22,13 @@ class Menu:
 
     def load_assets(self):
         try:
-            bg = pg.image.load('resources/textures/doom_menu.png').convert_alpha()
+            bg = pg.image.load(resource_path('resources/textures/doom_menu.png')).convert_alpha()
             self.background = pg.transform.scale(bg, (RENDER_WIDTH, RENDER_HEIGHT))
         except:
             self.background = None
 
         try:
-            self.title_image = pg.image.load('resources/textures/doom_title.png').convert_alpha()
+            self.title_image = pg.image.load(resource_path('resources/textures/doom_title.png')).convert_alpha()
             max_width = int(RENDER_WIDTH * 0.8)
             if self.title_image.get_width() > max_width:
                 scale = max_width / self.title_image.get_width()
@@ -36,9 +37,8 @@ class Menu:
         except:
             self.title_image = None
 
-        # Load arrow from textures folder
         try:
-            arrow = pg.image.load('resources/textures/doom-nightmare-arrow.png').convert_alpha()
+            arrow = pg.image.load(resource_path('resources/textures/doom-nightmare-arrow.png')).convert_alpha()
             font_height = 32
             scale = font_height / arrow.get_height()
             new_width = int(arrow.get_width() * scale)
@@ -60,7 +60,7 @@ class Menu:
         if choice == "NEW GAME":
             self.game.start_game()
         elif choice == "OPTIONS":
-            print("Options selected")
+            self.game.open_options()
         elif choice == "QUIT":
             pg.quit()
             import sys
@@ -81,7 +81,6 @@ class Menu:
         overlay.fill((0, 0, 0, 140))
         screen.blit(overlay, (0, 0))
 
-        # Title
         if self.title_image:
             x = (RENDER_WIDTH - self.title_image.get_width()) // 2
             y = 60
@@ -92,7 +91,6 @@ class Menu:
             y = 60
             screen.blit(title_surf, (x, y))
 
-        # Menu options
         start_y = 320
         for i, option in enumerate(self.options):
             text = option.lower()
@@ -114,7 +112,7 @@ class Menu:
 
         try:
             small_font = pg.font.SysFont("Arial", 16)
-            credit = small_font.render("DOOMSDAY v0.1 | A Retro FPS Experience", True, (150,150,150))
+            credit = small_font.render("DOOMSDAY v0.2 | A Retro FPS Experience", True, (150,150,150))
             screen.blit(credit, (20, RENDER_HEIGHT - 30))
         except:
             pass

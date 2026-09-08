@@ -1,10 +1,11 @@
 import os
 import random
 import pygame as pg
+from utils import resource_path
 
 class MusicPlayer:
     def __init__(self, folder="music"):
-        self.folder = folder
+        self.folder = resource_path(folder)
         self.library = self.scan_folder()
         self.current_idx = 0 if self.library else None
         self.playing = False
@@ -13,7 +14,6 @@ class MusicPlayer:
         self.repeat = False
 
         if self.library:
-            # Ensure mixer is ready
             if not pg.mixer.get_init():
                 pg.mixer.init()
             pg.mixer.music.set_volume(self.volume)
@@ -46,8 +46,6 @@ class MusicPlayer:
             print("Music play error:", e)
 
     def toggle(self):
-        if not self.library:
-            return
         if self.playing:
             pg.mixer.music.pause()
             self.playing = False

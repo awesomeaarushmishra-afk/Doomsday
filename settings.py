@@ -11,7 +11,7 @@ RES = (WIDTH, HEIGHT)
 HALF_WIDTH = RENDER_WIDTH // 2
 HALF_HEIGHT = RENDER_HEIGHT // 2
 
-FPS = 0  # unlimited, set to 60 for cap
+FPS = 0
 
 PLAYER_POS = 1.5, 5
 PLAYER_ANGLE = 0
@@ -27,6 +27,7 @@ MOUSE_BORDER_LEFT = 100
 MOUSE_BORDER_RIGHT = WIDTH - MOUSE_BORDER_LEFT
 
 FLOOR_COLOR = (30, 30, 30)
+CEILING_COLOR = (128, 128, 128)
 
 FOV = math.pi / 3
 HALF_FOV = FOV / 2
@@ -40,3 +41,8 @@ SCALE = RENDER_WIDTH // NUM_RAYS
 
 TEXTURE_SIZE = 256
 HALF_TEXTURE_SIZE = TEXTURE_SIZE // 2
+
+# Level progression
+BASE_ENEMIES = 10         # enemies on level 1
+ENEMIES_PER_LEVEL = 2     # additional enemies per level
+MAX_LEVEL = 15
